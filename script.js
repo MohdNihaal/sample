@@ -41,7 +41,7 @@ loader.load(
     camera.lookAt(center); // Look at the center of the model
 
     // Rotate the model to face the camera
-    gltf.scene.rotation.y = 180.6   ; // Rotate 180 degrees (try 0, Math.PI/2, Math.PI, or 3*Math.PI/2)
+    gltf.scene.rotation.y = Math.PI; // Adjust this if needed
 
     // Scale the model if needed
     gltf.scene.scale.set(1, 1, 1); // Adjust scale if necessary
@@ -55,15 +55,40 @@ loader.load(
 camera.position.z = 5;
 console.log("Camera position set");
 
-// Comment out DeviceOrientationControls for testing on laptop
-// var controls = new THREE.DeviceOrientationControls(camera);
-// console.log("DeviceOrientationControls added");
+// Device Orientation permission
+if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+  DeviceOrientationEvent.requestPermission()
+    .then(function(permissionState) {
+      if (permissionState === 'granted') {
+        var controls = new THREE.DeviceOrientationControls(camera);
+        console.log("DeviceOrientationControls initialized");
 
-// Render and update controls
-function animate() {
-  requestAnimationFrame(animate);
-  // controls.update(); // Uncomment if using DeviceOrientationControls
-  renderer.render(scene, camera);
+        // Render and update controls
+        function animate() {
+          requestAnimationFrame(animate);
+          controls.update(); // Update orientation based on device movement
+          renderer.render(scene, camera);
+        }
+        animate();
+        console.log("Animation loop started");
+      } else {
+        console.error("Permission not granted for Device Orientation");
+      }
+    })
+    .catch(function(error) {
+      console.error("Error requesting Device Orientation permission:", error);
+    });
+} else {
+  // Non-iOS 13 devices do not require permission.
+  var controls = new THREE.DeviceOrientationControls(camera);
+  console.log("DeviceOrientationControls initialized");
+
+  // Render and update controls
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update(); // Update orientation based on device movement
+    renderer.render(scene, camera);
+  }
+  animate();
+  console.log("Animation loop started");
 }
-animate();
-console.log("Animation loop started");
