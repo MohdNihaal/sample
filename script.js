@@ -29,66 +29,51 @@ window.addEventListener('resize', function() {
 // Load GLTF model
 var loader = new THREE.GLTFLoader();
 loader.load(
-  'scene.gltf', // Ensure this path is correct
-  function(gltf) {
-    scene.add(gltf.scene);
-    console.log("Model loaded successfully and added to the scene");
+    'scene.gltf', // Ensure this path is correct
+    function (gltf) {
+        scene.add(gltf.scene);
 
-    // Center camera on the loaded model
-    var box = new THREE.Box3().setFromObject(gltf.scene);
-    var center = box.getCenter(new THREE.Vector3());
-    camera.position.set(center.x, center.y, center.z + 5);
-    camera.lookAt(center); // Look at the center of the model
+        // Center the model and camera
+        const box = new THREE.Box3().setFromObject(gltf.scene);
+        const center = box.getCenter(new THREE.Vector3());
+        camera.position.z = box.max.z * 2; // Adjust camera distance as needed
+        camera.lookAt(center);
 
-    // Rotate the model to face the camera
-    gltf.scene.rotation.y = Math.PI; // Adjust this if needed
-
-    // Scale the model if needed
-    gltf.scene.scale.set(1, 1, 1); // Adjust scale if necessary
-  },
-  undefined,
-  function(error) {
-    console.error("An error occurred while loading the model:", error);
-  }
+        // Add event listener for device orientation
+        window.addEventListener('deviceorientation', handleDeviceOrientation);
+    },
+    undefined,
+    function (error) {
+        console.error("An error occurred while loading the model:", error);
+    }
 );
+
+// Function to handle device orientation events
+function handleDeviceOrientation(event) {
+    const alpha = event.alpha;
+    const beta = event.beta;
+    const gamma = event.gamma;
+
+    // Adjust the model's rotation based on orientation data
+    gltf.scene.rotation.set(
+        THREE.MathUtils.degToRad(beta),
+        THREE.MathUtils.degToRad(alpha),
+        THREE.MathUtils.degToRad(gamma)
+    );
+}
 
 camera.position.z = 5;
 console.log("Camera position set");
 
-// Device Orientation permission
-if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-  DeviceOrientationEvent.requestPermission()
-    .then(function(permissionState) {
-      if (permissionState === 'granted') {
-        var controls = new THREE.DeviceOrientationControls(camera);
-        console.log("DeviceOrientationControls initialized");
+// Comment out DeviceOrientationControls for testing on laptop
+// var controls = new THREE.DeviceOrientationControls(camera);
+// console.log("DeviceOrientationControls added");
 
-        // Render and update controls
-        function animate() {
-          requestAnimationFrame(animate);
-          controls.update(); // Update orientation based on device movement
-          renderer.render(scene, camera);
-        }
-        animate();
-        console.log("Animation loop started");
-      } else {
-        console.error("Permission not granted for Device Orientation");
-      }
-    })
-    .catch(function(error) {
-      console.error("Error requesting Device Orientation permission:", error);
-    });
-} else {
-  // Non-iOS 13 devices do not require permission.
-  var controls = new THREE.DeviceOrientationControls(camera);
-  console.log("DeviceOrientationControls initialized");
-
-  // Render and update controls
-  function animate() {
-    requestAnimationFrame(animate);
-    controls.update(); // Update orientation based on device movement
-    renderer.render(scene, camera);
-  }
-  animate();
-  console.log("Animation loop started");
+// Render and update controls
+function animate() {
+  requestAnimationFrame(animate);
+  // controls.update(); // Uncomment if using DeviceOrientationControls
+  renderer.render(scene, camera);
 }
+animate();
+console.log("Animation loop started");
